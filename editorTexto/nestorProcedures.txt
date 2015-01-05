@@ -1,0 +1,184 @@
+﻿ksp
+
+create database facebook;
+use facebook;
+create table usuarios(
+	id int auto_increment not null,
+	usuario varchar(20),
+	pwd varchar(20),
+	primary key(id));
+	
+create table paginas(
+	idpagina int auto_increment not null,
+	pagina text,
+	fkid int,
+	primary key(idpagina),
+	index (fkid),
+	foreign key(fkid) references usuarios(id) on update cascade on delete set null);
+	
+create table logs(
+	idlog int auto_increment not null,
+	fkidpagina int,
+	fecha text,
+	ubicacion text,
+	primary key(idlog),
+	index(fkidpagina),
+	foreign key(fkidpagina) references paginas(idpagina) on update cascade on delete set null);
+	
+**************************************************************************************************************
+**************************************************************************************************************
+para que se muestren las tablas ejem-> describe logs
+
+PROCEDIMIENTOS ALMACENADOS
+
+delimiter //
+create procedure validar(in a varchar(20), b varchar(20))
+begin
+selet count(*) from usuarios where usuario=a and pwd=b;
+end
+//
+
+create view extraer as select * from paginas;
+//
+
+create procedure mostrar(in a int)
+begin
+select idpagina, pagina from extraer where fkid=a;
+end
+//
+
+create procedure insertarl(in a int,b text,c text)
+begin
+insert into logs(fkidpagina,fecha,ubicacion)values(a,b,c);
+end
+//
+
+create procedure extraerid(in a varchar(20),b varchar(20))
+begin
+select id from usuarios where usuario=a ando pwd=b;
+end
+//
+
+create user 'lol'@'localhost' identified by '1234' //
+
+grant all on facebook.* to lol identified by '1234' //  <!-- esto es para darle permisos al usuario creado -->
+
+
+
+****************************************************************************************************************************
+****************************************************************************************************************************
+->crear carpeta que se llama facebook en htdocs
+->crear un usuario
+->en la tabla pagina crear en campo pagina un html....body hola mundo /body ...
+->guardar una imagen jpg en la carpeta facebook
+
+->crear archivo conectar.php
+
+<?php
+define("servidor","localhost");
+define("usuario","root");
+define("pwd","");
+define("bd","facebook");
+$mysqli=mysqli_connect(servidor,usuario,pwd,bd);
+?>
+
+->crear archivo funciones.php
+
+<?php
+
+function validar($mysqli,$u,$p){
+$e=$mysqli->prepare("call validar(?,?)");
+$e->bind_param('ss',$u,$p);
+$e->ejecute();
+$e->bind_result($n);  //este es para traer el resultado de la consulta
+e->fetch();
+	if($n > 0){  //c es el capcha  y suponemos por ahora que es '1'
+		return true;
+	}
+	else{
+		return false;
+	}
+	$e->close();
+}
+
+
+?>
+
+----> crear archivo index.html que pida usuario y contraseña
+<html>
+<head>
+<title>login</title>
+</head>
+
+<body>
+<form method="post" action="procesar.php">
+<table border="1">
+<tr><td colspan=2 align="center">Bienvenido</td></tr>
+<tr><td>Usuario</td><td><input type="text" name="u" value=""></td></tr>
+<tr><td>Clave</td><td><input type="password" name="p" value=""></td></tr>
+<tr><td><img src="captcha.php"></td><td><input ="text" name="c" value=""></td></tr>
+<tr><td colspan=2 align="center"><input type="submit" name="e" value="enviar"></td></tr></table></form>
+</body>
+
+</html>
+
+----> crear procesar.php
+
+<?php
+
+$session_start();
+include 'conectar.php';
+include 'funciones.php';
+
+$usuario=$_POST['u'];
+$clave=$_POST['p'];
+$captcha=$_POST['c'];
+
+
+if(validar($mysqli,$usuario,$clave) && captcha==$_SESSION['captcha']){
+	echo 'bienvenido';
+}
+else{
+	echo 'error al iniciar sesion';
+}
+
+?>
+
+
+------>  crear un archivo captcha.php
+
+<?php
+
+	session_start();
+		$ran=subsrt(sha1(microtime()),0,6);
+		$SESSION['captcha']=$ran;
+		$newImage=imagecreatefromjpeg("valero.jpg");
+		$txtColor=imagecolorallocate("newImage,0,0,200);
+		imagestring($newImage,5,30,8,$ran,$txtColor);
+		header("Content-type:image/jpeg");
+		imagejpeg($newImage);
+
+?>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
